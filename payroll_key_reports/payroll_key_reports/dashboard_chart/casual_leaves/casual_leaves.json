@@ -1,0 +1,39 @@
+{
+ "chart_name": "Casual Leaves",
+ "chart_type": "Report",
+ "creation": "2024-01-29 12:22:26.916410",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "dynamic_filters_json": "{}",
+ "filters_json": "{\"company\":\"CaratRED Technologies LLP\",\"employee_status\":\"Active\",\"date\":\"2024-02-01\"}",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2024-02-01 10:45:29.938167",
+ "modified_by": "Administrator",
+ "module": "Payroll Key Reports",
+ "name": "Casual Leaves",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "report_name": "Employee Leave Balance Summary",
+ "roles": [
+  {
+   "role": "Employee Self Service"
+  },
+  {
+   "role": "Employee"
+  }
+ ],
+ "time_interval": "Yearly",
+ "timeseries": 0,
+ "timespan": "Last Year",
+ "type": "Donut",
+ "use_report_chart": 0,
+ "x_field": "employee",
+ "y_axis": [
+  {
+   "y_field": "casual_leave"
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+ "creation": "2024-01-23 19:02:34.795652",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "dynamic_filters_json": "{}",
+ "filters_json": "{\"date\":\"2024-01-23\",\"company\":\"CaratRED Technologies LLP\",\"employee_status\":\"Active\"}",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 0,
+ "is_standard": 1,
+ "label": "leaves",
+ "modified": "2024-01-23 19:02:34.795652",
+ "modified_by": "Administrator",
+ "module": "Payroll Key Reports",
+ "name": "leaves",
+ "owner": "Administrator",
+ "report_field": "casual_leave",
+ "report_function": "Sum",
+ "report_name": "Employee Leave Balance Summary",
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Daily",
+ "type": "Report"
+}

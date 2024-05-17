@@ -1,0 +1,13 @@
+{
+ "creation": "2024-02-02 11:29:12.112803",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart Source",
+ "idx": 0,
+ "modified": "2024-02-02 11:29:12.112803",
+ "modified_by": "Administrator",
+ "module": "Payroll Key Reports",
+ "name": "Casual Leave",
+ "owner": "Administrator",
+ "source_name": "Casual Leave",
+ "timeseries": 0
+}

@@ -1,0 +1,33 @@
+{
+ "chart_name": "Sick Leaves",
+ "chart_type": "Report",
+ "creation": "2024-01-23 19:20:31.649679",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "dynamic_filters_json": "{\"employee\":\"frappe.session.user\"}",
+ "filters_json": "{\"company\":\"CaratRED Technologies LLP\",\"employee_status\":\"Active\",\"date\":\"2024-01-29\"}",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2024-01-29 12:41:39.918553",
+ "modified_by": "Administrator",
+ "module": "Payroll Key Reports",
+ "name": "Sick Leaves",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "report_name": "Employee Leave Balance Summary",
+ "roles": [],
+ "time_interval": "Yearly",
+ "timeseries": 0,
+ "timespan": "Last Year",
+ "type": "Donut",
+ "use_report_chart": 0,
+ "x_field": "employee",
+ "y_axis": [
+  {
+   "color": "#e0a4ba",
+   "y_field": "sick_leave"
+  }
+ ]
+}

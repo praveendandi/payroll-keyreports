@@ -1,0 +1,77 @@
+{
+ "charts": [
+  {
+   "chart_name": "Causal Leaves Balance",
+   "label": "Causal Leaves"
+  },
+  {
+   "chart_name": "Sick Leaves Balance",
+   "label": "Sick Leaves"
+  }
+ ],
+ "content": "[{\"id\":\"kvsL7SXwko\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Holidays\",\"col\":4}},{\"id\":\"Yl6rsnIyvZ\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"On Leave Today\",\"col\":4}},{\"id\":\"JfRwUoEWXQ\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Birthdays\",\"col\":4}},{\"id\":\"6FTPyCMyA8\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Attendance\",\"col\":4}},{\"id\":\"VyZ9_U5XAp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"My Team\",\"col\":3}},{\"id\":\"qRezNPikU7\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Causal Leaves\",\"col\":6}},{\"id\":\"XrZtAEZCAp\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Sick Leaves\",\"col\":6}},{\"id\":\"DuDa8X7E8w\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Leave Request\",\"col\":4}},{\"id\":\"xnf1mjaxxK\",\"type\":\"paragraph\",\"data\":{\"text\":\"`\",\"col\":12}}]",
+ "creation": "2024-01-23 15:12:35.698146",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "home",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "HR Home",
+ "links": [],
+ "modified": "2024-02-23 17:59:22.646701",
+ "modified_by": "Administrator",
+ "module": "Payroll Key Reports",
+ "name": "HR Home",
+ "number_cards": [
+  {
+   "label": "Attendance",
+   "number_card_name": "Attendance"
+  },
+  {
+   "label": "Birthdays",
+   "number_card_name": "birthdays-1"
+  },
+  {
+   "label": "On Leave Today",
+   "number_card_name": "On Leave Today"
+  },
+  {
+   "label": "Holidays",
+   "number_card_name": "Holidays"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [
+  {
+   "document_type": "Leave Application",
+   "label": "Leave Request",
+   "quick_list_filter": "[[\"Leave Application\",\"creation\",\"Timespan\",\"today\",false]]"
+  }
+ ],
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Employee"
+  }
+ ],
+ "sequence_id": 34.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": "{}",
+   "label": "My Team",
+   "link_to": "my-team",
+   "stats_filter": "[]",
+   "type": "Page"
+  }
+ ],
+ "title": "HR Home"
+}

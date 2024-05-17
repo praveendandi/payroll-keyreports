@@ -1,0 +1,13 @@
+{
+ "creation": "2024-01-25 10:09:28.265762",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart Source",
+ "idx": 0,
+ "modified": "2024-01-25 10:09:49.881438",
+ "modified_by": "Administrator",
+ "module": "Payroll Key Reports",
+ "name": "leaves balances",
+ "owner": "Administrator",
+ "source_name": "leaves balances",
+ "timeseries": 0
+}

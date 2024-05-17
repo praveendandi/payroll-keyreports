@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include payroll_key_reports *.css
+recursive-include payroll_key_reports *.csv
+recursive-include payroll_key_reports *.html
+recursive-include payroll_key_reports *.ico
+recursive-include payroll_key_reports *.js
+recursive-include payroll_key_reports *.json
+recursive-include payroll_key_reports *.md
+recursive-include payroll_key_reports *.png
+recursive-include payroll_key_reports *.py
+recursive-include payroll_key_reports *.svg
+recursive-include payroll_key_reports *.txt
+recursive-exclude payroll_key_reports *.pyc

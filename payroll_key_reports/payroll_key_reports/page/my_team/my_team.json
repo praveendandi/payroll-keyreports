@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2024-01-29 12:57:05.884555",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2024-01-29 12:57:19.126586",
+ "modified_by": "Administrator",
+ "module": "Payroll Key Reports",
+ "name": "my-team",
+ "owner": "Administrator",
+ "page_name": "my-team",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "My Team"
+}
