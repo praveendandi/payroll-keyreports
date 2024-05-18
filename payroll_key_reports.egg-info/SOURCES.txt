@@ -3,6 +3,7 @@ README.md
 license.txt
 requirements.txt
 setup.py
+test.txt
 payroll_key_reports/__init__.py
 payroll_key_reports/hooks.py
 payroll_key_reports/modules.txt

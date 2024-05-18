@@ -23,7 +23,7 @@ frappe.query_reports["Salary Slip Analytics Base On Payroll Period"] = {
 			"fieldname":"payroll_period",
 			"label": __("Payroll Period"),
 			"fieldtype": "Link",
-			"options": "Fiscal Year",
+			"options": "Payroll Period",
 			"default": erpnext.utils.get_fiscal_year(frappe.datetime.get_today()),
 		},
 	],

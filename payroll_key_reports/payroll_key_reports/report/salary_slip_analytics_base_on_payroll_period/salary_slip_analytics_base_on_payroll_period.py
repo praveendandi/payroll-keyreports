@@ -16,16 +16,14 @@ def execute(filters=None):
         return [],[]
     
     start_date,end_date = start_and_end_date(filters)
-    print(start_date,end_date)
     
-    
+   
     filters.update({
         "from_date":start_date,
         "to_date":end_date
     })
     
     row_data = execute_(filters)
-    print(row_data[1])
     
     if len(row_data[1])>0:
         
@@ -53,7 +51,7 @@ def start_and_end_date(filters):
                                     fields=['start_date','end_date']
         )
     
-        if not payroll_period:
+        if len(payroll_period) <= 0:
             frappe.throw(_(f"Please Define Payroll Period of {year} Of This {company} Company"))
         else: 
             start_date = datetime.strftime(payroll_period[0]["start_date"], "%Y-%m-%d")
@@ -65,8 +63,7 @@ def start_and_end_date(filters):
 def get_data(filters,row_data):
     
     data_df = pd.DataFrame.from_records(row_data)
-    print(data_df.dtypes)
-   
+    
     del data_df['data_of_joining']
     del data_df["start_date"]
     del data_df["end_date"]
