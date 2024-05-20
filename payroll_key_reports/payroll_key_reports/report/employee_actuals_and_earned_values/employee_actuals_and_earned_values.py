@@ -1,29 +1,42 @@
 # Copyright (c) 2024, caratRED Technologies LLP and contributors
 # For license information, please see license.txt
 
-# import frappe
-
-
-# def execute(filters=None):
-# 	columns, data = [], []
-# 	return columns, data
-
-
-
 import frappe
-from frappe import _
-from frappe.utils import flt
-import re
-
+from frappe.utils import flt, formatdate
 import erpnext
+from frappe import _
+
 
 salary_slip = frappe.qb.DocType("Salary Slip")
 salary_detail = frappe.qb.DocType("Salary Detail")
 salary_component = frappe.qb.DocType("Salary Component")
 
 
+def get_salary_structure_earnings(salary_slip):
+	# Get the salary structure linked to the salary slip
+	salary_structure = frappe.db.get_value("Salary Slip", salary_slip, "salary_structure")
+	
+	# Construct and execute raw SQL query to fetch earnings
+	sql_query = """
+		SELECT sd.salary_component, sd.amount 
+		FROM `tabSalary Detail` sd 
+		WHERE sd.parent = %s AND sd.amount > 0 AND sd.salary_component NOT LIKE 'Deduction%%'
+	"""
+	earnings_data = frappe.db.sql(sql_query, (salary_structure,), as_dict=True)
+	
+	earnings_list = []
+	
+	# Iterate through the earnings data to extract components and amounts
+	for item in earnings_data:
+		earnings_list.append({
+			"salary_component": item.get("salary_component"),
+			"amount": item.get("amount")
+		})
+	
+	return earnings_list
+
+
 def execute(filters=None):
-	final_data, columns_earning, columns_deduction = get_data(filters)
 	if not filters:
 		filters = {}
 
@@ -37,7 +50,7 @@ def execute(filters=None):
 		return [], []
 
 	earning_types, ded_types = get_earning_and_deduction_types(salary_slips)
-	columns = get_columns(earning_types, ded_types, final_data)
+	columns = get_columns(earning_types, ded_types)
 
 	ss_earning_map = get_salary_slip_details(salary_slips, currency, company_currency, "earnings")
 	ss_ded_map = get_salary_slip_details(salary_slips, currency, company_currency, "deductions")
@@ -46,56 +59,70 @@ def execute(filters=None):
 
 	data = []
 	for ss in salary_slips:
-		row = {
-			"salary_slip_id": ss.name,
-			"employee": ss.employee,
-			"employee_name": ss.employee_name,
-			"data_of_joining": doj_map.get(ss.employee),
-			"branch": ss.branch,
-			"department": ss.department,
-			"designation": ss.designation,
-			"company": ss.company,
-			"start_date": ss.start_date,
-			"end_date": ss.end_date,
-			"leave_without_pay": ss.leave_without_pay,
-			"salary_structure": ss.salary_structure,
-			"payment_days": ss.payment_days,
-			"currency": currency or company_currency,
-			"total_loan_repayment": ss.total_loan_repayment,
-		}
+		employee_data = frappe.db.get_list("Employee", {"name": ss.employee}, ["name", "bank_name", "bank_ac_no", "ifsc_code", "custom_gross_amount", "attendance_device_id"])
 
-		update_column_width(ss, columns)
+		for emp in employee_data:
+			department_name = None
+			if ss.department:
+				department_name = ss.department.split(" - ")[0] if " - " in ss.department else ss.department
 
-		for e in earning_types:
-			row.update({frappe.scrub(e): ss_earning_map.get(ss.name, {}).get(e)})
+			actual_gross = emp.custom_gross_amount
+			row = {
+				"salary_slip_id": ss.name,
+				"employee": ss.employee,
+				"employee_name": ss.employee_name,
+				"data_of_joining": formatdate(doj_map.get(ss.employee), "dd-mm-yyyy"),
+				"branch": ss.branch,
+				"department": department_name,
+				"designation": ss.designation,
+				"attendance_device_id": emp.attendance_device_id,
+				"company": ss.company,
+				"start_date": formatdate(ss.start_date, "dd-mm-yyyy"),
+				"end_date": formatdate(ss.end_date, "dd-mm-yyyy"),
+				"leave_without_pay": ss.leave_without_pay,
+				"payment_days": ss.payment_days,
+				"currency": currency or company_currency,
+				"bank_name": ss.bank_name,
+				"bank_account_no": ss.bank_account_no,
+				"ifsc_code": emp.ifsc_code,
+				"total_loan_repayment": ss.total_loan_repayment,
+				"actual_gross_pay": actual_gross
+			}
 
-		for d in ded_types:
-			row.update({frappe.scrub(d): ss_ded_map.get(ss.name, {}).get(d)})
+			update_column_width(ss, columns)
 
-		if currency == company_currency:
-			row.update(
-				{
-					"gross_pay": flt(ss.gross_pay) * flt(ss.exchange_rate),
-					"total_deduction": flt(ss.total_deduction) * flt(ss.exchange_rate),
-					"net_pay": flt(ss.net_pay) * flt(ss.exchange_rate),
-				}
-			)
+			salary_structure_earnings = get_salary_structure_earnings(ss)
 
-		else:
-			row.update(
-				{"gross_pay": ss.gross_pay, "total_deduction": ss.total_deduction, "net_pay": ss.net_pay}
-			)
+			for e in earning_types:
+				actual_earning_value = next(
+					(item["amount"] for item in salary_structure_earnings if item.get("salary_component") == e),
+					0
+				)
+				row.update({
+					f"actual_{frappe.scrub(e)}": round(actual_earning_value),
+					frappe.scrub(e): round(ss_earning_map.get(ss.name, {}).get(e) or 0)
+				})
 
-		data.append(row)
+			for d in ded_types:
+				row.update({frappe.scrub(d): round(ss_ded_map.get(ss.name, {}).get(d) or 0)})
 
-	merged_list = []
-	for dict1 in data:
-		for dict2 in final_data:
-			if dict1['employee'] == dict2['employee']:
-				merged_dict = {**dict1, **dict2}
-				merged_list.append(merged_dict)
+			if currency == company_currency:
+				row.update(
+					{
+						"gross_pay": round(flt(ss.gross_pay) * flt(ss.exchange_rate)),
+						"total_deduction": round(flt(ss.total_deduction) * flt(ss.exchange_rate)),
+						"net_pay": round(flt(ss.net_pay) * flt(ss.exchange_rate)),
+					}
+				)
+			else:
+				row.update(
+					{"gross_pay": ss.gross_pay, "total_deduction": ss.total_deduction, "net_pay": ss.net_pay}
+				)
 
-	return columns, merged_list
+			data.append(row)
+   
+
+	return columns, data
 
 
 def get_earning_and_deduction_types(salary_slips):
@@ -120,28 +147,14 @@ def update_column_width(ss, columns):
 	if ss.leave_without_pay is not None:
 		columns[9].update({"width": 120})
 
+def get_columns(earning_types, ded_types):
+	not_include_net = []
 
-def get_columns(earning_types, ded_types, final_data):
 	columns = [
-		{
-			"label": _("Salary Slip ID"),
-			"fieldname": "salary_slip_id",
-			"fieldtype": "Link",
-			"options": "Salary Slip",
-			"width": 150,
-		},
-		{
-			"label": _("Company"),
-			"fieldname": "company",
-			"fieldtype": "Link",
-			"options": "Company",
-			"width": 180,
-		},
 		{
 			"label": _("Employee"),
 			"fieldname": "employee",
-			"fieldtype": "Link",
-			"options": "Employee",
+			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
@@ -154,21 +167,20 @@ def get_columns(earning_types, ded_types, final_data):
 			"label": _("Date of Joining"),
 			"fieldname": "data_of_joining",
 			"fieldtype": "Date",
-			"width": 160,
+			"width": 120,
 		},
 		{
-			"label": _("Branch"),
+			"label": _("Location"),
 			"fieldname": "branch",
 			"fieldtype": "Link",
 			"options": "Branch",
-			"width": -1,
+			"width": 120,
 		},
 		{
 			"label": _("Department"),
 			"fieldname": "department",
-			"fieldtype": "Link",
-			"options": "Department",
-			"width": 80,
+			"fieldtype": "Data",
+			"width": -1,
 		},
 		{
 			"label": _("Designation"),
@@ -177,31 +189,48 @@ def get_columns(earning_types, ded_types, final_data):
 			"options": "Designation",
 			"width": 120,
 		},
-		
+		{
+			"label": _("Company"),
+			"fieldname": "company",
+			"fieldtype": "Link",
+			"options": "Company",
+			"width": 120,
+		},
+		{
+			"label": _("Bank Name"),
+			"fieldname": "bank_name",
+			"fieldtype": "data",
+			"width": 120,
+		},
+		{
+			"label": _("Account No"),
+			"fieldname": "bank_account_no",
+			"fieldtype": "data",
+			"width": 120,
+		},
+		{
+			"label": _("IFSC Code"),
+			"fieldname": "ifsc_code",
+			"fieldtype": "data",
+			"width": 120,
+		},
 		{
 			"label": _("Start Date"),
 			"fieldname": "start_date",
 			"fieldtype": "Data",
-			"width": 100,
+			"width": 120,
 		},
 		{
 			"label": _("End Date"),
 			"fieldname": "end_date",
 			"fieldtype": "Data",
-			"width": 80,
+			"width": 120,
 		},
 		{
 			"label": _("Leave Without Pay"),
 			"fieldname": "leave_without_pay",
 			"fieldtype": "Float",
 			"width": 50,
-		},
-		{
-			"label": _("Salary Structure"),
-			"fieldname": "salary_structure",
-			"fieldtype": "Link",
-			"options": "Salary Structure",
-			"width": 120,
 		},
 		{
 			"label": _("Payment Days"),
@@ -211,55 +240,60 @@ def get_columns(earning_types, ded_types, final_data):
 		},
 	]
 
-	unique_components = set()
-
-	for employee_data in final_data:
-		unique_components.update(employee_data.keys() - {'Salary Structure', 'total_deduction',
-														'employee', 'employee_name', 'department', 'designation','Provident Fund', 'Professional Tax','total_deduction'})
-
-	unique_components = sorted(unique_components)
-
-	for component in unique_components:
+	# Add actual earnings columns
+	for e in earning_types:
 		columns.append(
 			{
-				"label": component.replace("_", " ").title(),
-				"fieldname": component,
-				"fieldtype": "Currency", 
+				"label": f"Actual {e}",
+				"fieldname": f"actual_{frappe.scrub(e)}",
+				"fieldtype": "Currency",
+				"options": "currency",
 				"width": 120,
 			}
 		)
-
-	for earning in earning_types:
+	columns.append(
+		{
+			"label": _("Actual Gross Pay"),
+			"fieldname": "actual_gross_pay",
+			"fieldtype": "Currency",
+			"options": "currency",
+			"width": 140,
+		}
+	)
+	# Add earned earnings columns
+	for e in earning_types:
 		columns.append(
 			{
-				"label": earning,
-				"fieldname": frappe.scrub(earning),
+				"label": e,
+				"fieldname": frappe.scrub(e),
 				"fieldtype": "Currency",
 				"options": "currency",
 				"width": 120,
 			}
 		)
 
+	
 	columns.append(
 		{
-			"label": _("Gross Pay"),
+			"label": _("Earned Gross Pay"),
 			"fieldname": "gross_pay",
 			"fieldtype": "Currency",
 			"options": "currency",
-			"width": 120,
+			"width": 150,
 		}
 	)
 
 	for deduction in ded_types:
-		columns.append(
-			{
-				"label": deduction,
-				"fieldname": frappe.scrub(deduction),
-				"fieldtype": "Currency",
-				"options": "currency",
-				"width": 120,
-			}
-		)
+		if deduction not in ["PF-Employer", "ESIE","Actual PF Employer","Labour Welfare Employer"]:
+			columns.append(
+				{
+					"label": deduction,
+					"fieldname": frappe.scrub(deduction),
+					"fieldtype": "Currency",
+					"options": "currency",
+					"width": 120,
+				}
+			)
 
 	columns.extend(
 		[
@@ -291,8 +325,35 @@ def get_columns(earning_types, ded_types, final_data):
 				"options": "Currency",
 				"hidden": 1,
 			},
+			# {
+			# 	"label": _("Attendance Device Id"),
+			# 	"fieldname": "attendance_device_id",
+			# 	"fieldtype": "Data",
+			# 	"width": 100,
+			# },
 		]
 	)
+
+	for not_in in not_include_net:
+		columns.append(
+			{
+				"label": not_in,
+				"fieldname": frappe.scrub(not_in),
+				"fieldtype": "Currency",
+				"options": "currency",
+				"width": 100,
+			}
+		)
+		columns.append(
+			{
+				"label": f"Actual {not_in}",
+				"fieldname": f"actual_{frappe.scrub(not_in)}",
+				"fieldtype": "Currency",
+				"options": "currency",
+				"width": 100,
+			}
+		)
+
 	return columns
 
 
@@ -373,99 +434,3 @@ def get_salary_slip_details(salary_slips, currency, company_currency, component_
 			ss_map[d.parent][d.salary_component] += flt(d.amount)
 
 	return ss_map
-
-
-def get_data(filters):
-	final_data = []
- 
-	employee_list = frappe.db.get_list("Employee", {"status": "Active"}, ['employee', 'department', 'designation', 'employee_name'], order_by='employee asc')
-	for each in employee_list:
-		employee_ssa = frappe.db.get_list("Salary Structure Assignment", {'employee': each['employee'], 'docstatus': 1}, ['employee', 'salary_structure', 'base'])
-
-		if len(employee_ssa) > 0:
-			salary_earnings = frappe.db.get_list("Salary Detail", {'parent': employee_ssa[0]['salary_structure'], 'parentfield': "earnings"}, ['*'])
-			salary_deductions = frappe.db.get_list("Salary Detail", {'parent': employee_ssa[0]['salary_structure'], 'parentfield': "deductions"}, ['*'])
-
-			earning = earnings_details(salary_earnings, employee_ssa)
-			print(earning,"earningearningearning")
-			duplicate_earning = earning.copy()
-
-			earning.update({"employee": each['employee'], "employee_name": each['employee_name'], "department": each['department'],
-							"designation": each['designation']})
-
-			
-			deduction = deductions_details(salary_earnings,salary_deductions,employee_ssa)
-
-			final_data.append({**earning, **deduction})
-	print(final_data,'/////////////////////')
-	return final_data,[],[]
-
-
-def earnings_details(salary_earnings, employee_ssa):
-	try:
-		
-		final_result = {"Gross Amount": 0.0}
-
-		for each in salary_earnings:
-			value_formula = 0.0 
-			if "/" in each['formula']:
-				abbr_formula_values = each['formula'].split(' / ')
-				for abr in salary_earnings:
-					if abr["abbr"] == abbr_formula_values[0]:
-						formula_value = abr['formula'].split("*")[1]
-						value_formula = float(formula_value) / int(abbr_formula_values[1])
-
-				each['formula'] = f"base * {value_formula}"
-			else:
-				pass
-
-			formula_value = [float(s) for s in re.findall(r'\d.+', each['formula'])]
-
-			if formula_value:
-				component_name = f"Actual_{each['salary_component']}"
-				final_result.update({component_name: (employee_ssa[0]['base'] * formula_value[0])})
-				final_result["Gross Amount"] += employee_ssa[0]['base'] * formula_value[0]
-
-			else:
-				component_name = f"Actual_{each['salary_component']}"
-				final_result.update({component_name: (each['amount'])})
-				final_result["Gross Amount"] += each['amount']
-
-		
-		return final_result
-	except Exception as e:
-		frappe.log_error(str(e))
-
-
-def deductions_details(salary_earnings,salary_deductions,employee_ssa):
-	try:
-		final_deductions = {}
-		for each in salary_deductions:
-			
-			pf_formula = each['formula'].split(' * ')
-		
-			for abr in salary_earnings:
-				if abr["abbr"] == pf_formula[0]:
-					pf_abbr = abr['formula'].split(" * ")
-					pf_amount = abr['amount']
-     
-			formula_value = [float(s) for s in re.findall(r'\d.+', each['formula'])]
-   
-			if formula_value and employee_ssa[0]['base']:
-				component_name = f"Actual_{each['salary_component']}"
-				
-				final_deductions.update({component_name: (employee_ssa[0]['base'] * float(pf_abbr[1])* formula_value[0])})
-			elif formula_value and pf_amount:
-				print("elif elif")
-				component_name = f"Actual_{each['salary_component']}"
-				final_deductions.update({component_name: (float(pf_amount) * formula_value[0])})
-
-			else:
-				component_name = f"Actual_{each['salary_component']}"
-				final_deductions.update({component_name: (each['amount'])})
-				
-		return final_deductions
-	
-	except Exception as e:
-		frappe.log_error(str(e))
-
