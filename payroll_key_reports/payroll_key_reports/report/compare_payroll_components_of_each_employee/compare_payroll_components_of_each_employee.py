@@ -27,7 +27,7 @@ def execute(filters=None):
         
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
-        frappe.log_error("line No:{}\n{}".format(exc_tb.tb_lineno, traceback.format_exc()), "update_earning_table")
+        frappe.log_error("line No:{}\n{}".format(exc_tb.tb_lineno, traceback.format_exc()), "execute")
         
 
 
@@ -177,15 +177,23 @@ def get_data(filters, conds):
             employee_detail = get_employee_detail(employee_key)
 
             if employee_key not in final_data:
+                cost_center = None
+                department = None
+                if employee_detail.get("payroll_cost_center"):
+                    cost_center = employee_detail.payroll_cost_center.split(" - ")[0] if " - " in employee_detail.get("payroll_cost_center") else employee_detail.get("payroll_cost_center")
+                    
+                if employee_detail.get("department"):
+                    department = employee_detail.department.split(" - ")[0] if " - " in employee_detail.get("department") else employee_detail.get("department")
+                
                 final_data[employee_key] = {
                     "employee": employee_key,
                     "employee_name": employee.get("employee_name"),
                     "employement_status": employee_detail.status,
                     "employment_type": employee_detail.employment_type,
                     "job_title": employee_detail.designation,
-                    "department": employee_detail.department.split(" - ")[0] if " - " in employee_detail.get("department") else employee_detail.get("department"),
+                    "department": department,
                     "location": employee_detail.branch,
-                    "cost_center": employee_detail.payroll_cost_center.split(" - ")[0] if " - " in employee_detail.get("payroll_cost_center") else employee_detail.get("payroll_cost_center"),
+                    "cost_center": cost_center,
                 }
                 
             salary_slip_child = update_earning_table(employee)
